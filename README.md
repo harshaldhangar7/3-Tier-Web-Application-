@@ -30,15 +30,6 @@ React Frontend       Flask Backend
 - Docker
 - Docker Compose
 
-## Important
-
-This project does NOT use:
-
-- SQLAlchemy
-- Any ORM
-
-Flask communicates directly with MySQL using `mysql-connector-python`.
-
 ## Directory Structure
 
 three-tier-flask-registration/

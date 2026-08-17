@@ -4,20 +4,20 @@ services:
     container_name: registration-db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: registration_db
-      MYSQL_USER: appuser
-      MYSQL_PASSWORD: apppassword
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uappuser", "-papppassword"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${MYSQL_USER}", "-p${MYSQL_PASSWORD}"]
       interval: 5s
       timeout: 5s
       retries: 20
     networks:
-      - app-network
+      - db-network
 
   backend:
     build: ./backend
@@ -26,22 +26,22 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: 3306
-      DB_NAME: registration_db
-      DB_USER: appuser
-      DB_PASSWORD: apppassword
-      JWT_SECRET: change-this-secret-before-production
+      DB_NAME: ${MYSQL_DATABASE}
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
     networks:
-      - app-network
+      - web-network
+      - db-network
 
   frontend:
     build: ./frontend
     container_name: registration-frontend
     restart: unless-stopped
     networks:
-      - app-network
+      - web-network
 
   proxy:
     build: ./proxy
@@ -53,11 +53,13 @@ services:
       - frontend
       - backend
     networks:
-      - app-network
+      - web-network
 
 volumes:
   mysql_data:
 
 networks:
-  app-network:
+  web-network:
+    driver: bridge
+  db-network:
     driver: bridge

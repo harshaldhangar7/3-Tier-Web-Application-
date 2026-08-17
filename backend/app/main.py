@@ -2,7 +2,7 @@ import os
 import hashlib
 import hmac
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from functools import wraps
 
 # pyrefly: ignore [missing-import]
@@ -16,9 +16,9 @@ CORS(app)
 DB_CONFIG = {
     "host": os.getenv("DB_HOST", "db"),
     "port": int(os.getenv("DB_PORT", "3306")),
-    "database": os.getenv("DB_NAME", "registration_db"),
-    "user": os.getenv("DB_USER", "appuser"),
-    "password": os.getenv("DB_PASSWORD", "apppassword"),
+    "database": os.getenv("DB_NAME"),
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
 }
 
 
@@ -243,6 +243,11 @@ def login():
                 "id": user["id"],
                 "name": user["name"],
                 "email": user["email"],
+                "created_at": (
+                    user["created_at"].isoformat()
+                    if isinstance(user["created_at"], datetime)
+                    else user["created_at"]
+                ),
             },
         })
 

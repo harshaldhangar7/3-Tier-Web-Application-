@@ -1,46 +1,47 @@
 # 3-Tier Registration Project
 ## React + NGINX + Flask + MySQL + Docker Compose
 
-This project demonstrates a simple production-style 3-tier web application.
+This project is a simplified production-style 3-tier web application showing how to integrate and secure React, Flask, and MySQL inside Docker.
 
-## Architecture
+## Architecture & Network Isolation
 
-Browser
-   |
-   v
-NGINX Reverse Proxy
-   |
-   +--------------------+
-   |                    |
-   v                    v
-React Frontend       Flask Backend
-                         |
-                         v
-                       MySQL
+```
+           [ Browser ]
+                |
+                v  (port 80)
+      [ NGINX Reverse Proxy ]   <--- (web-network)
+         |               |
+         |               v
+         |       [ React Frontend ]  <--- (web-network)
+         v
+  [ Flask Backend ]                  <--- (web-network & db-network)
+         |
+         v  (port 3306)
+     [ MySQL ]                       <--- (db-network)
+```
 
-## Technologies
+For security, the containers are separated into two isolated networks:
+1. **`web-network`**: Connects the `proxy`, `frontend`, and `backend`.
+2. **`db-network`**: Connects the `backend` and `db` (MySQL).
 
-- React
-- Vite
-- NGINX
-- Python Flask
-- MySQL
-- mysql-connector-python
-- JWT
-- Docker
-- Docker Compose
+*The Nginx proxy and MySQL database are on different networks and cannot communicate directly with each other.*
+
+---
 
 ## Directory Structure
 
-three-tier-flask-registration/
+```text
+3-Tier-Web-Application/
 │
-├── docker-compose.yml
+├── .env                  # DB Credentials & Configuration (Git-ignored)
+├── .env.example          # Sample environment variables template
+├── docker-compose.yml    # Orchestrates services and isolated networks
 │
-├── proxy/
+├── proxy/                # NGINX reverse proxy configuration
 │   ├── Dockerfile
 │   └── nginx.conf
 │
-├── frontend/
+├── frontend/             # React (Vite) application
 │   ├── Dockerfile
 │   ├── package.json
 │   ├── index.html
@@ -49,7 +50,7 @@ three-tier-flask-registration/
 │       ├── main.jsx
 │       └── style.css
 │
-├── backend/
+├── backend/              # Python Flask API backend
 │   ├── Dockerfile
 │   ├── requirements.txt
 │   └── app/
@@ -57,45 +58,43 @@ three-tier-flask-registration/
 │       ├── __main__.py
 │       └── main.py
 │
-└── db/
-    └── init.sql
+└── db/                   # Database initialization
+    └── init.sql          # Creates users table
+```
 
-## Start Project
+---
 
-Run:
+## Setup & Getting Started
 
-docker compose up -d --build
+1. **Environment Variables**:
+   Copy `.env.example` to a new file named `.env` and configure your credentials:
+   ```bash
+   cp .env.example .env
+   ```
 
-Check:
+2. **Start the Application**:
+   Run the following command to build and launch all services in detached mode:
+   ```bash
+   docker compose up -d --build
+   ```
 
-docker compose ps
+3. **Verify Status**:
+   Ensure all containers are running and healthy:
+   ```bash
+   docker compose ps
+   ```
 
-Open:
+4. **Access the App**:
+   Open your browser and navigate to:
+   ```text
+   http://localhost
+   ```
 
-http://ip
+---
 
-## Expected Containers
-
-registration-proxy
-registration-frontend
-registration-backend
-registration-db
-
-The proxy communicates with:
-
-frontend:80
-backend:5000
-
-The Flask backend communicates with:
-
-db:3306
-
-Inside a Docker container, do NOT use localhost to reach another container.
-
-Correct:
-
-DB_HOST=db
-
-Incorrect:
-
-DB_HOST=localhost
+## Authentication Mechanism
+This application uses a simplified authentication system:
+* Upon successful login, the server returns the user's database `ID`.
+* The frontend stores the ID inside local storage as `userId`.
+* Subsequent requests send the header `Authorization: Bearer <userId>`.
+* The backend parses this header and fetches details directly from the database, eliminating JWT overhead.

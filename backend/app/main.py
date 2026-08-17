@@ -5,7 +5,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 
-import jwt
+# pyrefly: ignore [missing-import]
 import mysql.connector
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -20,9 +20,6 @@ DB_CONFIG = {
     "user": os.getenv("DB_USER", "appuser"),
     "password": os.getenv("DB_PASSWORD", "apppassword"),
 }
-
-JWT_SECRET = os.getenv("JWT_SECRET", "change-me")
-JWT_ALGORITHM = "HS256"
 
 
 def get_db_connection():
@@ -59,16 +56,6 @@ def verify_password(password, stored_hash):
         return False
 
 
-def create_token(user):
-    payload = {
-        "sub": user["id"],
-        "email": user["email"],
-        "exp": datetime.now(timezone.utc) + timedelta(hours=2),
-    }
-
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
-
-
 def token_required(route_function):
     @wraps(route_function)
     def wrapper(*args, **kwargs):
@@ -80,14 +67,9 @@ def token_required(route_function):
         token = auth_header.split(" ", 1)[1]
 
         try:
-            payload = jwt.decode(
-                token,
-                JWT_SECRET,
-                algorithms=[JWT_ALGORITHM],
-            )
-            user_id = int(payload["sub"])
-        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError, ValueError):
-            return jsonify({"error": "Invalid or expired token"}), 401
+            user_id = int(token)
+        except ValueError:
+            return jsonify({"error": "Invalid token"}), 401
 
         connection = None
         cursor = None
@@ -252,7 +234,7 @@ def login():
                 "error": "Invalid email or password"
             }), 401
 
-        token = create_token(user)
+        token = str(user["id"])
 
         return jsonify({
             "message": "Login successful",

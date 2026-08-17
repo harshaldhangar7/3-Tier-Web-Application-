@@ -6,24 +6,24 @@ const API = "/api";
 
 function App() {
   const [page, setPage] = useState(
-    localStorage.getItem("token") ? "dashboard" : "login"
+    localStorage.getItem("userId") ? "dashboard" : "login"
   );
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(
-    Boolean(localStorage.getItem("token"))
+    Boolean(localStorage.getItem("userId"))
   );
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
 
-    if (!token) {
+    if (!userId) {
       setLoading(false);
       return;
     }
 
     fetch(`${API}/me`, {
       headers: {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${userId}`
       }
     })
       .then(async (response) => {
@@ -40,14 +40,14 @@ function App() {
         setPage("dashboard");
       })
       .catch(() => {
-        localStorage.removeItem("token");
+        localStorage.removeItem("userId");
         setPage("login");
       })
       .finally(() => setLoading(false));
   }, []);
 
   function logout() {
-    localStorage.removeItem("token");
+    localStorage.removeItem("userId");
     setUser(null);
     setPage("login");
   }
@@ -106,7 +106,7 @@ function Login({ onRegister, onSuccess }) {
         throw new Error(data.error || "Login failed");
       }
 
-      localStorage.setItem("token", data.token);
+      localStorage.setItem("userId", data.token);
       onSuccess(data.user);
 
     } catch (error) {
